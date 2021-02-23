@@ -40,15 +40,42 @@ fn scan_line(line: String, env: &str) -> Option<usize> {
     return None
 }
 
+struct LeakedEnv<'a> {
+    pub line_n: usize,
+    pub char_n: usize,
+
+    pub path: String,
+    pub line: String,
+    pub env: &'a str,
+}
+
+
+fn leak_alert(env: &LeakedEnv) {
+    let line: String = env.line.chars().enumerate().map(|(i, c)| 
+                                                      if i > env.char_n && i < env.char_n + env.env.len() {'*'} else {c})
+                                                      .collect();
+    println!("Line: {}", line);
+    println!("Possible leak in file {} at {}:{}", env.path, env.line_n, env.char_n);
+}
+
 fn scan_file(path: String, envs: Vec<&str>) {
-    let lines = read_lines(path).unwrap();
-    for (line_count, line) in lines.enumerate() {
+    let lines = read_lines(path.clone()).unwrap();
+    for (line_n, line) in lines.enumerate() {
         let line = line.unwrap();
         for env in &envs {
-            let leak = scan_line(line.clone(), env);
-            match leak {
-                Some(char_count) => println!("Possible leak at {}:{}", line_count, char_count),
-                None             => println!("No leak at line {}", line_count)
+            let scanned_line = scan_line(line.clone(), env);
+            match scanned_line {
+                Some(char_n) => {
+                    let leaked_env = LeakedEnv {
+                        line: line.clone(),
+                        line_n,
+                        char_n,
+                        env,
+                        path: path.clone(),
+                    };
+                    leak_alert(&leaked_env);
+                }
+                None             => {}            
             }
         }
     }
