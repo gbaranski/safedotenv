@@ -51,10 +51,14 @@ struct LeakedEnv<'a> {
 
 
 fn leak_alert(env: &LeakedEnv) {
-    let line: String = env.line.chars().enumerate().map(|(i, c)| 
-                                                      if i > env.char_n && i < env.char_n + env.env.len() {'*'} else {c})
-                                                      .collect();
-    println!("Line: {}", line);
+    let censored_line: String = env.line
+        .chars()
+        .enumerate()
+        .map(|(i, c)| 
+             if i >= env.char_n && i < env.char_n + env.env.len() {'*'} else {c})
+        .collect();
+
+    println!("Line: {}", censored_line);
     println!("Possible leak in file {} at {}:{}", env.path, env.line_n, env.char_n);
 }
 
