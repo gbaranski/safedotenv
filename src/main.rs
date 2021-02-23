@@ -61,17 +61,17 @@ fn leak_alert(env: &LeakedEnv) {
 
     println!("{}:{}:{}: {}", 
              env.path.bold(), 
-             env.line_n.to_string().bold(), 
-             env.char_n.to_string().bold(), 
+             (env.line_n + 1).to_string().bold(), 
+             (env.char_n + 1).to_string().bold(), 
              "Possible leak".red().bold());
 
-    println!("{} | {}", env.line_n, censored_line);
+    println!("{} | {}", env.line_n + 1, censored_line);
 }
 
-fn scan_file(path: String, envs: Vec<&str>) {
-    let lines = read_lines(path.clone()).unwrap();
+fn scan_file(path: String, envs: Vec<&str>) -> std::io::Result<()> {
+    let lines = read_lines(path.clone())?;
     for (line_n, line) in lines.enumerate() {
-        let line = line.unwrap();
+        let line = line?;
         for env in &envs {
             let scanned_line = scan_line(line.clone(), env);
             match scanned_line {
@@ -85,24 +85,24 @@ fn scan_file(path: String, envs: Vec<&str>) {
                     };
                     leak_alert(&leaked_env);
                 }
-                None             => {}            
+                None => {}            
             }
         }
     }
+    Ok(())
 }
 
 fn scan_dir(path: String, envs: Vec<&str>) -> std::io::Result<()> {
-    let paths = fs::read_dir(path).unwrap();
+    let paths = fs::read_dir(path)?;
     for dir_entry in paths {
-        let dir_entry = dir_entry.unwrap();
+        let dir_entry = dir_entry?;
         let path_str = dir_entry.path().to_str().unwrap().to_string();
-        let md = dir_entry.metadata().unwrap();
+        let md = dir_entry.metadata()?;
         if md.is_dir() {
-            println!("{} is directory, searching recursively", path_str);
             return scan_dir(path_str, envs);
         }
-        println!("{} is file, searching for leak", path_str);
-        scan_file(path_str, envs.clone());
+        println!("scanning: {}", path_str.bold());
+        scan_file(path_str, envs.clone())?;
     }
     Ok(())
 }
