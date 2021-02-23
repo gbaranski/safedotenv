@@ -3,6 +3,7 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 use std::fs::File;
+use colored::*;
 
 
 #[derive(Debug, StructOpt)]
@@ -58,8 +59,13 @@ fn leak_alert(env: &LeakedEnv) {
              if i >= env.char_n && i < env.char_n + env.env.len() {'*'} else {c})
         .collect();
 
-    println!("Line: {}", censored_line);
-    println!("Possible leak in file {} at {}:{}", env.path, env.line_n, env.char_n);
+    println!("{}:{}:{}: {}", 
+             env.path.bold(), 
+             env.line_n.to_string().bold(), 
+             env.char_n.to_string().bold(), 
+             "Possible leak".red().bold());
+
+    println!("{} | {}", env.line_n, censored_line);
 }
 
 fn scan_file(path: String, envs: Vec<&str>) {
