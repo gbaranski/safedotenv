@@ -70,8 +70,8 @@ fn scan_dir(path: String, envs: Vec<&str>) -> std::io::Result<()> {
     Ok(())
 }
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let args = Args::from_args();
     let envs = ["hello"];
-    panic!(scan_dir(args.path, envs.to_vec()));
+    scan_dir(args.path, envs.to_vec())
 }
