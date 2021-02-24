@@ -1,16 +1,10 @@
 use std::fs;
 use colored::*;
 use crate::utils::read_lines;
-
-#[derive(Clone)]
-pub struct EnvVar {
-    pub key: String,
-    pub value: String,
-
-}
+use crate::dotenv::{EnvVar, EnvVarsMap};
 
 struct FoundEnvVar<'a> {
-    pub env: &'a EnvVar,
+    pub env: EnvVar<'a>,
     pub line_n: usize,
     pub char_n: usize,
 
@@ -39,7 +33,7 @@ fn alert_found_env(found: &FoundEnvVar) {
     println!("{} | {}", found.line_n + 1, censored_line);
 }
 
-fn scan_line(line: String, env: &EnvVar) -> Option<usize> {
+fn scan_line(line: String, env: EnvVar) -> Option<usize> {
     if line.len() < env.value.len() {
         return None
     };
@@ -62,11 +56,15 @@ fn scan_line(line: String, env: &EnvVar) -> Option<usize> {
 }
 
 
-pub fn scan_file(path: String, envs: Vec<EnvVar>) -> std::io::Result<()> {
+pub fn scan_file(path: String, envs: EnvVarsMap) -> std::io::Result<()> {
     let lines = read_lines(path.clone())?;
     for (line_n, line) in lines.enumerate() {
         let line = line?;
         for env in &envs {
+            let env = EnvVar{
+                key: env.0,
+                value: env.1,
+            };
             let scanned_line = scan_line(line.clone(), env);
             match scanned_line {
                 Some(char_n) => {
@@ -86,7 +84,7 @@ pub fn scan_file(path: String, envs: Vec<EnvVar>) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn scan_dir(path: String, envs: Vec<EnvVar>) -> std::io::Result<()> {
+pub fn scan_dir(path: String, envs: EnvVarsMap) -> std::io::Result<()> {
     let paths = fs::read_dir(path)?;
     for dir_entry in paths {
         let dir_entry = dir_entry?;

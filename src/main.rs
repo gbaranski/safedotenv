@@ -3,6 +3,7 @@ use std::fs;
 
 pub mod utils;
 pub mod scan;
+pub mod dotenv;
 
 #[derive(Debug, StructOpt)]
 struct Args {
@@ -11,16 +12,15 @@ struct Args {
 
 fn main() -> std::io::Result<()> {
     let args = Args::from_args();
-    let envs = [
-        scan::EnvVar{
-            key: "SECRET_TOKEN".to_string(),
-            value: "hello".to_string(),
-        }
-    ];
     let md = fs::metadata(args.path.clone())?;
+
     if md.is_dir() {
-        scan::scan_dir(args.path, envs.to_vec())
+        let dotenv_path = format!("{}/.env", args.path);
+        let env_vars = dotenv::parse(dotenv_path)?;
+
+        scan::scan_dir(args.path, env_vars)?;
     } else {
-        scan::scan_file(args.path, envs.to_vec())
+        // scan::scan_file(args.path, envs.to_vec())
     }
+    Ok(())
 }
