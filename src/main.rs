@@ -1,26 +1,61 @@
 use structopt::StructOpt;
-use std::fs;
+use std::io::{Error, ErrorKind};
 
 pub mod utils;
 pub mod scan;
 pub mod dotenv;
 
-#[derive(Debug, StructOpt)]
-struct Args {
-    pub path: String,
+
+/// Scans your code for any secret leaks and alerts you about it
+#[derive(StructOpt)]
+#[structopt(name="safedotenv", author="gbaranski <root@gbaranski.com>", version="1.0")]
+struct Options {
+    #[structopt(help = "Set input file/directory to scan")]
+    pub paths: Vec<String>,
+
+
+    #[structopt(short = "f", long, help="Set dotenv file to read from(by default <INPUT>/.env)")]
+    pub env_file: Option<String>,
+
+
+    #[structopt(long, help="Set files/directories to ignore")]
+    pub ignored_files: Vec<String>,
+
+    #[structopt(long, help="Set enviroment variables to ignore")]
+    pub ignored_envs: Vec<String>,
 }
 
+
+
 fn main() -> std::io::Result<()> {
-    let args = Args::from_args();
-    let md = fs::metadata(args.path.clone())?;
+    let options: Options = Options::from_args();
 
-    if md.is_dir() {
-        let dotenv_path = format!("{}/.env", args.path);
-        let env_vars = dotenv::parse(dotenv_path)?;
+    for path in &options.paths {
+        let path_type = utils::get_path_type(path)?;
+        
+        let dotenv_path = match path_type {
+            utils::PathType::Directory => Ok(options.env_file.clone().unwrap_or(format!("{}/.env", path))),
+            utils::PathType::File => 
+                if options.env_file == None {
+                    Err(
+                        Error::new(
+                            ErrorKind::InvalidInput, 
+                            "env_file param is missing, it is required if input is directory"))
+                } else {
+                    Ok(options.env_file.clone().unwrap())
+                }
+        }?;
 
-        scan::scan_dir(args.path, env_vars)?;
-    } else {
-        // scan::scan_file(args.path, envs.to_vec())
+        let env_vars = dotenv::parse(&dotenv_path);
+        assert!(env_vars.is_ok(), "failed reading env_vars from '{}' {}", dotenv_path, env_vars.unwrap_err());
+        let env_vars = env_vars.unwrap();
+
+        match path_type {
+            utils::PathType::Directory => scan::scan_dir(path, env_vars),
+            utils::PathType::File => scan::scan_file(path, env_vars),
+        }?;
+
     }
+
     Ok(())
 }

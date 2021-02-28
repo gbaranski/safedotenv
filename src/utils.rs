@@ -9,3 +9,25 @@ where P: AsRef<Path>, {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
+
+pub enum PathType {
+    File,
+    Directory,
+}
+
+
+pub fn get_path_type(path: &String) -> Result<PathType, std::io::Error> {
+    let md = std::fs::metadata(path)?;
+    if md.is_dir() {
+        Ok(PathType::Directory)
+    } else if md.is_file() {
+        Ok(PathType::File)
+    } else {
+        Err(
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData, "path is neither directory nor file"
+                )
+           )
+    }
+}
+

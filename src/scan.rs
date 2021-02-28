@@ -56,7 +56,7 @@ fn scan_line(line: String, env: EnvVar) -> Option<usize> {
 }
 
 
-pub fn scan_file(path: String, envs: EnvVarsMap) -> std::io::Result<()> {
+pub fn scan_file(path: &str, envs: EnvVarsMap) -> std::io::Result<()> {
     let lines = read_lines(path.clone())?;
     for (line_n, line) in lines.enumerate() {
         let line = line?;
@@ -73,7 +73,7 @@ pub fn scan_file(path: String, envs: EnvVarsMap) -> std::io::Result<()> {
                         line_n,
                         char_n,
                         env,
-                        path: path.clone(),
+                        path: path.to_owned(),
                     };
                     alert_found_env(&found_env);
                 }
@@ -84,11 +84,20 @@ pub fn scan_file(path: String, envs: EnvVarsMap) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn scan_dir(path: String, envs: EnvVarsMap) -> std::io::Result<()> {
+pub fn scan_dir(path: &str, envs: EnvVarsMap) -> std::io::Result<()> {
     let paths = fs::read_dir(path)?;
     for dir_entry in paths {
-        let dir_entry = dir_entry?;
-        let path_str = dir_entry.path().to_str().unwrap().to_string();
+        let dir_entry = dir_entry?.path();
+        let path_str = match dir_entry.to_str() {
+            Some(s) => Ok(s),
+            None => Err(
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "missing path name"
+                    )
+                )
+        }?;
+
         let md = dir_entry.metadata()?;
         if md.is_dir() {
             return scan_dir(path_str, envs);

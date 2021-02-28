@@ -28,7 +28,7 @@ impl From<String> for ParseError {
 }
 
 
-pub fn parse(path: String) -> io::Result<EnvVarsMap> {
+pub fn parse(path: &str) -> io::Result<EnvVarsMap> {
     let mut env_vars : EnvVarsMap = HashMap::new();
 
     let lines = utils::read_lines(path)?;
