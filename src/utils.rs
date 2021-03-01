@@ -16,11 +16,10 @@ pub enum PathType {
 }
 
 
-pub fn get_path_type(path: &String) -> Result<PathType, std::io::Error> {
-    let md = std::fs::metadata(path)?;
-    if md.is_dir() {
+pub fn get_path_type(path: &std::path::PathBuf) -> Result<PathType, std::io::Error> {
+    if path.is_dir() {
         Ok(PathType::Directory)
-    } else if md.is_file() {
+    } else if path.is_file() {
         Ok(PathType::File)
     } else {
         Err(

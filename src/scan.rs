@@ -2,13 +2,14 @@ use std::fs;
 use colored::*;
 use crate::utils::read_lines;
 use crate::dotenv::{EnvVar, EnvVarsMap};
+use std::path::PathBuf;
 
 struct FoundEnvVar<'a> {
     pub env: EnvVar<'a>,
     pub line_n: usize,
     pub char_n: usize,
 
-    pub path: String,
+    pub path: &'a PathBuf,
     pub line: String,
 }
 
@@ -23,7 +24,7 @@ fn alert_found_env(found: &FoundEnvVar) {
         .collect();
 
     println!("{}:{}:{}: {} {}", 
-             found.path.bold(), 
+             found.path.to_str().unwrap().bold(), 
              (found.line_n + 1).to_string().bold(), 
              (found.char_n + 1).to_string().bold(), 
              "found".red().bold(),
@@ -56,7 +57,7 @@ fn scan_line(line: String, env: EnvVar) -> Option<usize> {
 }
 
 
-pub fn scan_file(path: &str, envs: EnvVarsMap) -> std::io::Result<()> {
+pub fn scan_file(path: &PathBuf, envs: EnvVarsMap) -> std::io::Result<()> {
     let lines = read_lines(path.clone())?;
     for (line_n, line) in lines.enumerate() {
         let line = line?;
@@ -73,7 +74,7 @@ pub fn scan_file(path: &str, envs: EnvVarsMap) -> std::io::Result<()> {
                         line_n,
                         char_n,
                         env,
-                        path: path.to_owned(),
+                        path,
                     };
                     alert_found_env(&found_env);
                 }
@@ -84,26 +85,16 @@ pub fn scan_file(path: &str, envs: EnvVarsMap) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn scan_dir(path: &str, envs: EnvVarsMap) -> std::io::Result<()> {
+pub fn scan_dir(path: &PathBuf, envs: EnvVarsMap) -> std::io::Result<()> {
     let paths = fs::read_dir(path)?;
     for dir_entry in paths {
-        let dir_entry = dir_entry?.path();
-        let path_str = match dir_entry.to_str() {
-            Some(s) => Ok(s),
-            None => Err(
-                std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "missing path name"
-                    )
-                )
-        }?;
-
-        let md = dir_entry.metadata()?;
+        let path = dir_entry?.path();
+        let md = path.metadata()?;
         if md.is_dir() {
-            return scan_dir(path_str, envs);
+            return scan_dir(&path, envs);
         }
-        println!("scanning: {}", path_str.bold());
-        scan_file(path_str, envs.clone())?;
+        println!("scanning: {}", path.to_str().unwrap().bold());
+        scan_file(&path, envs.clone())?;
     }
     Ok(())
 }

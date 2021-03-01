@@ -1,40 +1,25 @@
-use structopt::StructOpt;
 use std::io::{Error, ErrorKind};
+use structopt::StructOpt;
+use human_panic::setup_panic;
 
 pub mod utils;
 pub mod scan;
 pub mod dotenv;
-
-
-/// Scans your code for any secret leaks and alerts you about it
-#[derive(StructOpt)]
-#[structopt(name="safedotenv", author="gbaranski <root@gbaranski.com>", version="1.0")]
-struct Options {
-    #[structopt(help = "Set input file/directory to scan")]
-    pub paths: Vec<String>,
-
-
-    #[structopt(short = "f", long, help="Set dotenv file to read from(by default <INPUT>/.env)")]
-    pub env_file: Option<String>,
-
-
-    #[structopt(long, help="Set files/directories to ignore")]
-    pub ignored_files: Vec<String>,
-
-    #[structopt(long, help="Set enviroment variables to ignore")]
-    pub ignored_envs: Vec<String>,
-}
-
+pub mod cli;
 
 
 fn main() -> std::io::Result<()> {
-    let options: Options = Options::from_args();
+    setup_panic!();
+
+    let options: cli::Options = cli::Options::from_args();
+    cli::Options::from_args();
 
     for path in &options.paths {
         let path_type = utils::get_path_type(path)?;
         
         let dotenv_path = match path_type {
-            utils::PathType::Directory => Ok(options.env_file.clone().unwrap_or(format!("{}/.env", path))),
+            utils::PathType::Directory => 
+                Ok(options.env_file.clone().unwrap_or(format!("{}/.env", path.to_str().unwrap()))),
             utils::PathType::File => 
                 if options.env_file == None {
                     Err(
