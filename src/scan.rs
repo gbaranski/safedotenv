@@ -57,10 +57,13 @@ fn scan_line(line: String, env: EnvVar) -> Option<usize> {
 }
 
 
-pub fn scan_file(path: &PathBuf, envs: EnvVarsMap) -> std::io::Result<()> {
-    let lines = read_lines(path.clone())?;
+pub fn scan_file(path: &PathBuf, envs: EnvVarsMap) -> Result<(), crate::CustomError> {
+    let lines = read_lines(path.clone())
+        .map_err(|err| crate::CustomError(format!("fail reading lines of `{}`: `{}`", path.to_str().unwrap(), err)))?;
     for (line_n, line) in lines.enumerate() {
-        let line = line?;
+        let line = line
+            .map_err(|err| crate::CustomError(format!("fail reading line `{}` of `{}`: {}", line_n + 1, path.to_str().unwrap(), err)))?;
+
         for env in &envs {
             let env = EnvVar{
                 key: env.0,
@@ -85,11 +88,17 @@ pub fn scan_file(path: &PathBuf, envs: EnvVarsMap) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn scan_dir(path: &PathBuf, envs: EnvVarsMap) -> std::io::Result<()> {
-    let paths = fs::read_dir(path)?;
+pub fn scan_dir(path: &PathBuf, envs: EnvVarsMap) -> Result<(), crate::CustomError> {
+    let paths = fs::read_dir(path)
+        .map_err(|err| crate::CustomError(format!("Error reading directory `{}`: {}", path.to_str().unwrap(), err)))?;
+
     for dir_entry in paths {
-        let path = dir_entry?.path();
-        let md = path.metadata()?;
+        let dir_entry = dir_entry
+            .map_err(|err| crate::CustomError(format!("failed reading directory entry: {}", err)))?;
+
+        let path = dir_entry.path();
+        let md = path.metadata()
+            .map_err(|err| crate::CustomError(format!("failed scanning metadata of file `{}`: {}",path.to_str().unwrap() ,err)))?;
         if md.is_dir() {
             return scan_dir(&path, envs);
         }

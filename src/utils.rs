@@ -16,17 +16,13 @@ pub enum PathType {
 }
 
 
-pub fn get_path_type(path: &std::path::PathBuf) -> Result<PathType, std::io::Error> {
+pub fn get_path_type(path: &std::path::PathBuf) -> Result<PathType, crate::CustomError> {
     if path.is_dir() {
         Ok(PathType::Directory)
     } else if path.is_file() {
         Ok(PathType::File)
     } else {
-        Err(
-            std::io::Error::new(
-                std::io::ErrorKind::InvalidData, "path is neither directory nor file"
-                )
-           )
+        Err(crate::CustomError(format!("path `{}` is neither directory nor file", path.to_str().unwrap())))
     }
 }
 

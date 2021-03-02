@@ -1,6 +1,7 @@
-use std::io::{Error, ErrorKind};
 use structopt::StructOpt;
-use human_panic::setup_panic;
+
+#[derive(Debug)]
+pub struct CustomError(String);
 
 pub mod utils;
 pub mod scan;
@@ -8,9 +9,7 @@ pub mod dotenv;
 pub mod cli;
 
 
-fn main() -> std::io::Result<()> {
-    setup_panic!();
-
+fn main() -> Result<(), CustomError> {
     let options: cli::Options = cli::Options::from_args();
     cli::Options::from_args();
 
@@ -22,10 +21,7 @@ fn main() -> std::io::Result<()> {
                 Ok(options.env_file.clone().unwrap_or(format!("{}/.env", path.to_str().unwrap()))),
             utils::PathType::File => 
                 if options.env_file == None {
-                    Err(
-                        Error::new(
-                            ErrorKind::InvalidInput, 
-                            "env_file param is missing, it is required if input is directory"))
+                    Err(CustomError(String::from("unknown env file path, specify it by --env-file argument, or target a directory with .env file")))
                 } else {
                     Ok(options.env_file.clone().unwrap())
                 }
