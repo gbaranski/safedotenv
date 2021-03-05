@@ -5,7 +5,7 @@ use structopt::StructOpt;
 #[structopt(name="safedotenv", author="gbaranski <root@gbaranski.com>", version="1.0")]
 pub struct Options {
     #[structopt(help = "Set input file/directory to scan", parse(from_os_str))]
-    pub paths: Vec<std::path::PathBuf>,
+    pub targets: Vec<std::path::PathBuf>,
 
 
     #[structopt(short = "f", long, help="Set dotenv file to read from(by default <INPUT>/.env)")]

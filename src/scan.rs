@@ -1,10 +1,9 @@
-use std::fs;
 use colored::*;
 use crate::utils::read_lines;
 use crate::dotenv::{EnvVar, EnvVarsMap};
 use std::path::PathBuf;
 
-struct FoundEnvVar<'a> {
+pub struct FoundEnvVar<'a> {
     pub env: EnvVar<'a>,
     pub line_n: usize,
     pub char_n: usize,
@@ -57,14 +56,20 @@ fn scan_line(line: String, env: EnvVar) -> Option<usize> {
 }
 
 
-pub fn scan_file(path: &PathBuf, envs: EnvVarsMap) -> Result<(), crate::CustomError> {
+pub fn scan_file<'a>(
+    path: &'a PathBuf, 
+    envs: &'a EnvVarsMap, 
+    found_envs: Vec<FoundEnvVar<'a>>
+    ) -> Result<Vec<FoundEnvVar<'a>>, crate::CustomError> {
+
     let lines = read_lines(path.clone())
         .map_err(|err| crate::CustomError(format!("fail reading lines of `{}`: `{}`", path.to_str().unwrap(), err)))?;
+
     for (line_n, line) in lines.enumerate() {
         let line = line
             .map_err(|err| crate::CustomError(format!("fail reading line `{}` of `{}`: {}", line_n + 1, path.to_str().unwrap(), err)))?;
 
-        for env in &envs {
+        for env in envs {
             let env = EnvVar{
                 key: env.0,
                 value: env.1,
@@ -79,32 +84,32 @@ pub fn scan_file(path: &PathBuf, envs: EnvVarsMap) -> Result<(), crate::CustomEr
                         env,
                         path,
                     };
-                    alert_found_env(&found_env);
+                    found_envs.push(found_env);
                 }
-                None => {}            
+                None => {}
             }
         }
     }
-    Ok(())
+    Ok(found_envs)
 }
 
-pub fn scan_dir(path: &PathBuf, envs: EnvVarsMap) -> Result<(), crate::CustomError> {
-    let paths = fs::read_dir(path)
-        .map_err(|err| crate::CustomError(format!("Error reading directory `{}`: {}", path.to_str().unwrap(), err)))?;
+// pub fn scan_dir(path: &PathBuf, envs: EnvVarsMap) -> Result<(), crate::CustomError> {
+//     let paths = fs::read_dir(path)
+//         .map_err(|err| crate::CustomError(format!("Error reading directory `{}`: {}", path.to_str().unwrap(), err)))?;
 
-    for dir_entry in paths {
-        let dir_entry = dir_entry
-            .map_err(|err| crate::CustomError(format!("failed reading directory entry: {}", err)))?;
+//     for dir_entry in paths {
+//         let dir_entry = dir_entry
+//             .map_err(|err| crate::CustomError(format!("failed reading directory entry: {}", err)))?;
 
-        let path = dir_entry.path();
-        let md = path.metadata()
-            .map_err(|err| crate::CustomError(format!("failed scanning metadata of file `{}`: {}",path.to_str().unwrap() ,err)))?;
-        if md.is_dir() {
-            return scan_dir(&path, envs);
-        }
-        println!("scanning: {}", path.to_str().unwrap().bold());
-        scan_file(&path, envs.clone())?;
-    }
-    Ok(())
-}
+//         let path = dir_entry.path();
+//         let md = path.metadata()
+//             .map_err(|err| crate::CustomError(format!("failed scanning metadata of file `{}`: {}",path.to_str().unwrap() ,err)))?;
+//         if md.is_dir() {
+//             return scan_dir(&path, envs);
+//         }
+//         println!("scanning: {}", path.to_str().unwrap().bold());
+//         scan_file(&path, envs.clone())?;
+//     }
+//     Ok(())
+// }
 
