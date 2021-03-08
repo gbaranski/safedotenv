@@ -62,6 +62,7 @@ pub fn scan_file<'a>(
     path: PathBuf, 
     envs: HashMap<String, String>, 
     ) -> Result<Vec<FoundEnvVar>, crate::CustomError> {
+    log::debug!("scanning file {}", path.to_str().unwrap());
     let mut found_envs: Vec<FoundEnvVar> = vec![];
 
     let lines = read_lines(path.clone())
@@ -99,24 +100,4 @@ pub fn scan_file<'a>(
 
     Ok(found_envs)
 }
-
-// pub fn scan_dir(path: &PathBuf, envs: EnvVarsMap) -> Result<(), crate::CustomError> {
-//     let paths = fs::read_dir(path)
-//         .map_err(|err| crate::CustomError(format!("Error reading directory `{}`: {}", path.to_str().unwrap(), err)))?;
-
-//     for dir_entry in paths {
-//         let dir_entry = dir_entry
-//             .map_err(|err| crate::CustomError(format!("failed reading directory entry: {}", err)))?;
-
-//         let path = dir_entry.path();
-//         let md = path.metadata()
-//             .map_err(|err| crate::CustomError(format!("failed scanning metadata of file `{}`: {}",path.to_str().unwrap() ,err)))?;
-//         if md.is_dir() {
-//             return scan_dir(&path, envs);
-//         }
-//         println!("scanning: {}", path.to_str().unwrap().bold());
-//         scan_file(&path, envs.clone())?;
-//     }
-//     Ok(())
-// }
 

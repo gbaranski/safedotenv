@@ -32,8 +32,8 @@ impl Options {
             false => log::LevelFilter::Info,
         };
 
-        let config = simplelog::ConfigBuilder::new().build();
+        let mut config_builder = simplelog::ConfigBuilder::new();
 
-        simplelog::SimpleLogger::init(level, config)
+        simplelog::SimpleLogger::init(level, config_builder.build())
     }
 }

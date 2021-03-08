@@ -24,7 +24,7 @@ pub fn parse(path: &PathBuf) -> Result<HashMap<String, String>, CustomError> {
 
         let equal_sign = line.clone().find('=');
         if equal_sign == None {
-           return Err(CustomError(format!("invalid line `{}` of `{}`, missing `=`", i, path.to_str().unwrap())));
+            return Err(CustomError(format!("invalid line `{}` of `{}`, missing `=`", i, path.to_str().unwrap())));
         }
 
         let kv: Vec<&str> = line.splitn(2, '=').collect();
@@ -60,10 +60,16 @@ pub fn get_dotenv_path(options: &cli::Options) -> Result<PathBuf, CustomError> {
         None => {
             match find_env_file_in_targets(&options.targets) {
                 Some(path) => {
-                    log::info!("Found .env file at {}, optionally you can specify it using --env-file", path.parent().unwrap().to_str().unwrap());
+                    log::info!(
+                        "Found .env file at {}, optionally you can specify it using --env-file", 
+                        path.parent().unwrap().to_str().unwrap()
+                        );
+
                     Ok(path)
                 },
-                None => Err(CustomError("unable to find any .env file in targets, specify one using --env-file flag".to_string()))
+                None => Err(
+                    CustomError("unable to find any .env file in targets, specify one using --env-file flag".to_string())
+                    )
             }
         }
     }

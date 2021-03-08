@@ -50,17 +50,27 @@ fn main() -> Result<(), CustomError> {
                 ))?;
 
     let dotenv_path = dotenv::get_dotenv_path(&options)?;
+    log::debug!("will use dotenv file at `{}`", dotenv_path.to_str().unwrap());
+
     let env_vars = dotenv::parse(&dotenv_path)?;
+    if log::max_level() >= log::LevelFilter::Debug {
+        for (i, env) in env_vars.iter().enumerate() {
+            let (key, value) = env;
+            log::debug!("{} env: {}={}", i, key, value);
+        }
+    }
 
     let threads = num_cpus::get();
     let mut workers = vec![];
     let (workq, stealer) = deque::new();
-    for _ in 0..threads {
+    for i in 0..threads {
         let worker = Worker { 
             chan: stealer.clone(),
             env_vars: env_vars.clone(),
         };
         workers.push(std::thread::spawn(|| worker.run()));
+
+        log::debug!("spawning worker {}", i);
     }
 
     for target in options.targets {
@@ -92,7 +102,7 @@ fn main() -> Result<(), CustomError> {
     }
 
     for found_env in found_envs {
-        println!("{}", found_env);
+        log::warn!("{}", found_env)
     }
 
 
