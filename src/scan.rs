@@ -1,14 +1,15 @@
 use colored::*;
 use crate::utils::read_lines;
-use crate::dotenv::{EnvVar, EnvVarsMap};
+use crate::dotenv::EnvVar;
 use std::path::PathBuf;
+use std::collections::HashMap;
 
-pub struct FoundEnvVar<'a> {
-    pub env: EnvVar<'a>,
+pub struct FoundEnvVar {
+    pub env: EnvVar,
     pub line_n: usize,
     pub char_n: usize,
 
-    pub path: &'a PathBuf,
+    pub path: PathBuf,
     pub line: String,
 }
 
@@ -33,19 +34,19 @@ fn alert_found_env(found: &FoundEnvVar) {
     println!("{} | {}", found.line_n + 1, censored_line);
 }
 
-fn scan_line(line: String, env: EnvVar) -> Option<usize> {
-    if line.len() < env.value.len() {
+fn scan_line(line: String, value: &String) -> Option<usize> {
+    if line.len() < value.len() {
         return None
     };
     let mut i: usize = 0;
     let mut j: usize = 0;
 
-    while i < line.len() && j < env.value.len() {
-        if line.chars().nth(i) == env.value.chars().nth(j) {
+    while i < line.len() && j < value.len() {
+        if line.chars().nth(i) == value.chars().nth(j) {
             i += 1;
             j += 1;
-            if j == env.value.len() {
-                return Some(i - env.value.len());
+            if j == value.len() {
+                return Some(i - value.len());
             }
         } else {
             i = i - j + 1;
@@ -57,32 +58,36 @@ fn scan_line(line: String, env: EnvVar) -> Option<usize> {
 
 
 pub fn scan_file<'a>(
-    path: &'a PathBuf, 
-    envs: &'a EnvVarsMap, 
-    found_envs: Vec<FoundEnvVar<'a>>
-    ) -> Result<Vec<FoundEnvVar<'a>>, crate::CustomError> {
+    path: PathBuf, 
+    envs: HashMap<String, String>, 
+    ) -> Result<Vec<FoundEnvVar>, crate::CustomError> {
+    let mut found_envs: Vec<FoundEnvVar> = vec![];
 
     let lines = read_lines(path.clone())
         .map_err(|err| crate::CustomError(format!("fail reading lines of `{}`: `{}`", path.to_str().unwrap(), err)))?;
 
     for (line_n, line) in lines.enumerate() {
         let line = line
-            .map_err(|err| crate::CustomError(format!("fail reading line `{}` of `{}`: {}", line_n + 1, path.to_str().unwrap(), err)))?;
+            .map_err(|err| crate::CustomError(
+                    format!(
+                        "fail reading line `{}` of `{}`: {}", line_n + 1, path.to_str().unwrap(), err)
+                    )
+                )?;
 
-        for env in envs {
-            let env = EnvVar{
-                key: env.0,
-                value: env.1,
-            };
-            let scanned_line = scan_line(line.clone(), env);
+        for env in &envs {
+            let (key, value) = env;
+            let scanned_line = scan_line(line.clone(), value);
             match scanned_line {
                 Some(char_n) => {
                     let found_env = FoundEnvVar {
                         line: line.clone(),
                         line_n,
                         char_n,
-                        env,
-                        path,
+                        env: EnvVar{
+                            key: key.clone(),
+                            value: value.clone(),
+                        },
+                        path: path.clone(),
                     };
                     found_envs.push(found_env);
                 }
@@ -90,6 +95,7 @@ pub fn scan_file<'a>(
             }
         }
     }
+
     Ok(found_envs)
 }
 

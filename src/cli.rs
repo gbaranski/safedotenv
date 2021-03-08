@@ -9,7 +9,7 @@ pub struct Options {
 
 
     #[structopt(short = "f", long, help="Set dotenv file to read from(by default <INPUT>/.env)")]
-    pub env_file: Option<String>,
+    pub env_file: Option<std::path::PathBuf>,
 
 
     #[structopt(long, help="Set files/directories to ignore")]
