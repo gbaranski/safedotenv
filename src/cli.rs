@@ -4,18 +4,36 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 #[structopt(name="safedotenv", author="gbaranski <root@gbaranski.com>", version="1.0")]
 pub struct Options {
-    #[structopt(help = "Set input file/directory to scan", parse(from_os_str))]
+    /// Set input file/directory to scan
+    #[structopt(default_value=".", parse(from_os_str))]
     pub targets: Vec<std::path::PathBuf>,
 
+    /// Enable debug mode(much more logging)
+    #[structopt(short="d", long="--debug")]
+    pub debug: bool,
 
-    #[structopt(short = "f", long, help="Set dotenv file to read from(by default <INPUT>/.env)")]
+    /// Set dotenv file to read from
+    #[structopt(short = "f", long="--env-file")]
     pub env_file: Option<std::path::PathBuf>,
 
-
-    #[structopt(long, help="Set files/directories to ignore")]
+    /// Set files/directories to ignore
+    #[structopt(long="--ignored-files")]
     pub ignored_files: Vec<String>,
 
-    #[structopt(long, help="Set enviroment variables to ignore")]
+    /// Set enviroment variables to ignore
+    #[structopt(long="--ignored-envs")]
     pub ignored_envs: Vec<String>,
 }
 
+impl Options {
+    pub fn init_logging(&self) -> Result<(), log::SetLoggerError> {
+        let level = match self.debug {
+            true => log::LevelFilter::Debug,
+            false => log::LevelFilter::Info,
+        };
+
+        let config = simplelog::ConfigBuilder::new().build();
+
+        simplelog::SimpleLogger::init(level, config)
+    }
+}

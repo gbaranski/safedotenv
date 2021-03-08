@@ -1,5 +1,5 @@
 use structopt::StructOpt;
-use colored::*;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct CustomError(String);
@@ -14,7 +14,6 @@ enum Work {
     Quit
 }
 
-use std::collections::HashMap;
 
 struct Worker {
     chan: deque::Stealer<Work>,
@@ -39,37 +38,19 @@ impl<'a> Worker {
 }
 
 
-fn get_dotenv_path(targets: &Vec<std::path::PathBuf>) -> Option<std::path::PathBuf> {
-    for target in targets {
-        if target.is_dir() {
-            let mut possible_dotenv_path = target.clone();
-            possible_dotenv_path.push(".env");
-            if possible_dotenv_path.exists() {
-                return Some(possible_dotenv_path);
-            }
-        }
-    }
-
-    None
-}
 
 fn main() -> Result<(), CustomError> {
     let options: cli::Options = cli::Options::from_args();
 
-    let dotenv_path = match options.env_file {
-        Some(path) => Ok(path),
-        None => {
-            match get_dotenv_path(&options.targets) {
-                Some(path) => {
-                    println!("Found .env file at {}, optionally you can specify it using --env-file", path.parent().unwrap().to_str().unwrap());
-                    Ok(path)
-                },
-                None => Err(CustomError("unable to find any .env file in targets, specify one using --env-file flag".to_string()))
-            }
-        }
-    }?;
-    let env_vars = dotenv::parse(&dotenv_path)?;
+    options
+        .init_logging()
+        .map_err(|err| CustomError(
+                format!(
+                    "fail initializing logging: `{}`", err)
+                ))?;
 
+    let dotenv_path = dotenv::get_dotenv_path(&options)?;
+    let env_vars = dotenv::parse(&dotenv_path)?;
 
     let threads = num_cpus::get();
     let mut workers = vec![];
@@ -81,12 +62,22 @@ fn main() -> Result<(), CustomError> {
         };
         workers.push(std::thread::spawn(|| worker.run()));
     }
-    
+
     for target in options.targets {
         let walker = ignore::WalkBuilder::new(target).build();
         let dir_entries = walker
             .filter_map(Result::ok)
-            .filter(|entry| entry.file_type().expect("missing filetype").is_file());
+            .filter(|entry| 
+                    entry
+                    .file_type()
+                    .ok_or(
+                        CustomError(
+                            format!("file `{}` has missing file type", entry.path().to_str().unwrap()))
+                        )
+                    .expect("missing filetype")
+                    .is_file()
+                   );
+
         for dir_entry in dir_entries {
             workq.push(Work::File(dir_entry.into_path()));
         }
@@ -101,22 +92,7 @@ fn main() -> Result<(), CustomError> {
     }
 
     for found_env in found_envs {
-        let censored_line: String = found_env.line
-            .chars()
-            .enumerate()
-            .map(|(i, c)| 
-                 if i >= found_env.char_n && i < found_env.char_n + found_env.env.value.len() {'*'} else {c})
-            .collect();
-
-        println!("{}:{}:{}: {} {}", 
-                 found_env.path.to_str().unwrap().bold(), 
-                 (found_env.line_n + 1).to_string().bold(), 
-                 (found_env.char_n + 1).to_string().bold(), 
-                 "found".red().bold(),
-                 found_env.env.key.bright_red().bold(),
-                 );
-
-        println!("{} | {}", found_env.line_n + 1, censored_line);
+        println!("{}", found_env);
     }
 
 

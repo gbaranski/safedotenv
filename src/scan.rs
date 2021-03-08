@@ -1,8 +1,9 @@
-use colored::*;
-use crate::utils::read_lines;
-use crate::dotenv::EnvVar;
 use std::path::PathBuf;
 use std::collections::HashMap;
+use std::fmt;
+use colored::Colorize;
+use crate::utils::{read_lines, Censorable};
+use crate::dotenv::EnvVar;
 
 pub struct FoundEnvVar {
     pub env: EnvVar,
@@ -14,24 +15,24 @@ pub struct FoundEnvVar {
 }
 
 
+impl std::fmt::Display for FoundEnvVar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let censored = self.line.censor(
+            self.char_n,
+            self.char_n + self.env.value.len()
+            );
 
-fn alert_found_env(found: &FoundEnvVar) {
-    let censored_line: String = found.line
-        .chars()
-        .enumerate()
-        .map(|(i, c)| 
-             if i >= found.char_n && i < found.char_n + found.env.value.len() {'*'} else {c})
-        .collect();
+        writeln!(f, "{}:{}:{}: {} {}", 
+                 self.path.to_str().unwrap().bold(), 
+                 (self.line_n + 1).to_string().bold(), 
+                 (self.char_n + 1).to_string().bold(), 
+                 "found".red().bold(),
+                 self.env.key.bright_red().bold(),
+                 )?;
+        write!(f, "{} | {}", self.line_n + 1, censored)?;
 
-    println!("{}:{}:{}: {} {}", 
-             found.path.to_str().unwrap().bold(), 
-             (found.line_n + 1).to_string().bold(), 
-             (found.char_n + 1).to_string().bold(), 
-             "found".red().bold(),
-             found.env.key.bright_red().bold(),
-             );
-
-    println!("{} | {}", found.line_n + 1, censored_line);
+        Ok(())
+    }
 }
 
 fn scan_line(line: String, value: &String) -> Option<usize> {

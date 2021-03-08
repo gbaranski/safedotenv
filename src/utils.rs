@@ -26,3 +26,16 @@ pub fn get_path_type(path: &std::path::PathBuf) -> Result<PathType, crate::Custo
     }
 }
 
+pub trait Censorable {
+    fn censor(&self, start: usize, end: usize) -> String;
+}
+
+impl Censorable for String {
+    fn censor(&self, start: usize, end: usize) -> String {
+        self.chars()
+            .enumerate()
+            .map(|(i, c)| 
+                 if i >= start && i < end {'*'} else {c})
+            .collect()
+    }
+}
