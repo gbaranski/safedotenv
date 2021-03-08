@@ -97,8 +97,7 @@ fn main() -> Result<(), CustomError> {
     }
     let mut found_envs: Vec<scan::FoundEnvVar> = Vec::new();
     for worker in workers {
-        let smth: Vec<scan::FoundEnvVar> = worker.join().unwrap().into();
-        found_envs.extend(smth);
+        found_envs.extend(worker.join().unwrap());
     }
 
     for found_env in found_envs {
