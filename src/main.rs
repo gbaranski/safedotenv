@@ -1,5 +1,6 @@
 use structopt::StructOpt;
 use std::collections::HashMap;
+use std::time::Instant;
 
 #[derive(Debug)]
 pub struct CustomError(String);
@@ -73,6 +74,8 @@ fn main() -> Result<(), CustomError> {
         log::debug!("spawning worker {}", i);
     }
 
+    let pre_scan = Instant::now();
+
     for target in options.targets {
         let walker = ignore::WalkBuilder::new(target).build();
         let dir_entries = walker
@@ -100,10 +103,13 @@ fn main() -> Result<(), CustomError> {
     for worker in workers {
         found_envs.extend(worker.join().unwrap());
     }
+    let elapsed = pre_scan.elapsed();
 
     for found_env in found_envs {
         log::warn!("{}", found_env)
     }
+
+    log::info!("Scanned files in {:?}", elapsed);
 
 
     Ok(())
