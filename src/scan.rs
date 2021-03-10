@@ -1,8 +1,11 @@
 use std::path::PathBuf;
+use std::fs::File;
+use std::io::BufReader;
 use std::collections::HashMap;
+use std::io::prelude::*;
 use std::fmt;
 use colored::Colorize;
-use crate::utils::{read_lines, Censorable};
+use crate::utils::Censorable;
 use crate::dotenv::EnvVar;
 
 pub struct FoundEnvVar {
@@ -65,11 +68,13 @@ pub fn scan_file<'a>(
 
     log::debug!("scanning file {}", path.to_str().unwrap());
     let mut found_envs: Vec<FoundEnvVar> = vec![];
+    
+    let file = File::open(&path)
+        .map_err(|err| crate::CustomError(format!("fail opening file `{}`:`{}`", path.to_str().unwrap(), err)))?;
 
-    let lines = read_lines(&path)
-        .map_err(|err| crate::CustomError(format!("fail reading lines of `{}`: `{}`", path.to_str().unwrap(), err)))?;
+    let buf_reader = BufReader::new(file);
 
-    for (line_n, line) in lines.enumerate() {
+    for (line_n, line) in buf_reader.lines().enumerate() {
         let line = line
             .map_err(|err| crate::CustomError(
                     format!(
@@ -79,22 +84,20 @@ pub fn scan_file<'a>(
 
         for env in &envs {
             let (key, value) = env;
-            let scanned_line = scan_line(line.clone(), value);
-            match scanned_line {
-                Some(char_n) => {
-                    let found_env = FoundEnvVar {
-                        line: line.clone(),
-                        line_n,
-                        char_n,
-                        env: EnvVar{
-                            key: key.clone(),
-                            value: value.clone(),
-                        },
-                        path: path.clone(),
-                    };
-                    found_envs.push(found_env);
-                }
-                None => {}
+            if line.contains(value) {
+                let found_env = FoundEnvVar {
+                    line: line.clone(),
+                    line_n,
+                    char_n: 10,
+                    env: EnvVar{
+                        key: key.clone(),
+                        value: value.clone(),
+                    },
+                    path: path.clone(),
+                };
+                found_envs.push(found_env);
+
+
             }
         }
     }
