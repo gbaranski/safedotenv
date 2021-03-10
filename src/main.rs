@@ -29,8 +29,12 @@ impl<'a> Worker {
                 deque::Stolen::Empty | deque::Stolen::Abort => continue,
                 deque::Data(Work::Quit) => break,
                 deque::Data(Work::File(path)) => {
-                    let found = scan::scan_file(path, self.env_vars.clone()).unwrap();
-                    v.extend(found);
+                    let found = scan::scan_file(path, self.env_vars.clone());
+                    match found {
+                        Ok(found) => v.extend(found),
+                        Err(err) => log::debug!("{:?}", err),
+
+                    }
                 }
             };
         }

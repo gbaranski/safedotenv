@@ -62,10 +62,11 @@ pub fn scan_file<'a>(
     path: PathBuf, 
     envs: HashMap<String, String>, 
     ) -> Result<Vec<FoundEnvVar>, crate::CustomError> {
+
     log::debug!("scanning file {}", path.to_str().unwrap());
     let mut found_envs: Vec<FoundEnvVar> = vec![];
 
-    let lines = read_lines(path.clone())
+    let lines = read_lines(&path)
         .map_err(|err| crate::CustomError(format!("fail reading lines of `{}`: `{}`", path.to_str().unwrap(), err)))?;
 
     for (line_n, line) in lines.enumerate() {
