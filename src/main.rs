@@ -74,26 +74,23 @@ fn main() -> Result<(), CustomError> {
         log::debug!("spawning worker {}", i);
     }
 
+
     let pre_scan = Instant::now();
 
-    for target in options.targets {
-        let walker = ignore::WalkBuilder::new(target).build();
-        let dir_entries = walker
-            .filter_map(Result::ok)
-            .filter(|entry| 
-                    entry
-                    .file_type()
-                    .ok_or(
-                        CustomError(
-                            format!("file `{}` has missing file type", entry.path().to_str().unwrap()))
-                        )
-                    .expect("missing filetype")
-                    .is_file()
-                   );
+    let all_entries = options.targets
+        .into_iter()
+        .map(|target|
+             ignore::WalkBuilder::new(target)
+             .build()
+             .filter_map(|entry| entry.ok())
+             .filter(|entry| entry
+                     .file_type()
+                     .unwrap()
+                     .is_file())
+            ).flatten().collect::<Vec<ignore::DirEntry>>();
 
-        for dir_entry in dir_entries {
-            workq.push(Work::File(dir_entry.into_path()));
-        }
+    for dir_entry in &all_entries {
+        workq.push(Work::File(dir_entry.clone().into_path()));
     }
 
     for _ in 0..workers.len() {
@@ -109,7 +106,7 @@ fn main() -> Result<(), CustomError> {
         log::warn!("{}", found_env)
     }
 
-    log::info!("Scanned files in {:?}", elapsed);
+    log::info!("Scanned {} files in {:?}", all_entries.len(),elapsed);
 
 
     Ok(())
