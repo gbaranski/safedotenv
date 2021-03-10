@@ -22,6 +22,14 @@ pub fn parse(path: &PathBuf) -> Result<HashMap<String, String>, CustomError> {
         let line = line
             .map_err(|err| crate::CustomError(format!("fail reading line `{}` of `{}`: `{}`", i, path.to_str().unwrap(), err)))?;
 
+        if line.len() < 1 {
+            continue;
+        }
+
+        if line.chars().nth(0) == Some('#') {
+            continue;
+        }
+
         let equal_sign = line.clone().find('=');
         if equal_sign == None {
             return Err(CustomError(format!("invalid line `{}` of `{}`, missing `=`", i, path.to_str().unwrap())));
