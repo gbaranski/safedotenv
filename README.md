@@ -50,9 +50,17 @@ safedotenv --env-file somedir/.env --ignore-env REFRESH_TOKEN ACCESS_TOKEN ~/som
 1. Open `.git/hooks/pre-commit` file(create if does not exits)
 2. Add this code
 ```bash
-#!/bin/sh
+#!/bin/bash
 
-safedotenv --silent $(git rev-parse --show-toplevel)
+out=$(safedotenv --quiet $(git rev-parse --show-toplevel) 2>&1)
+
+if [[ $out ]]; then
+  echo -e "${out}"
+  echo
+  echo "Safedotenv prevented you from possibly commiting unsafe code, to ignore that, use"
+  echo "  git commit --no-verify"
+  exit 1
+fi
 ```
 3. Add permissions to execute file
 ```bash
