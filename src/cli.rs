@@ -16,10 +16,6 @@ pub struct Options {
     #[structopt(short = "f", long="--env-file")]
     pub env_file: Option<std::path::PathBuf>,
 
-    /// Set files/directories to ignore
-    #[structopt(long="--ignored-files")]
-    pub ignored_files: Vec<String>,
-
     /// Set enviroment variables to ignore
     #[structopt(long="--ignored-envs")]
     pub ignored_envs: Vec<String>,

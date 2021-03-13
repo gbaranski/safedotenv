@@ -22,11 +22,11 @@ pub fn parse(path: &PathBuf, ignored_envs: &Vec<String>) -> Result<HashMap<Strin
         let line = line
             .map_err(|err| crate::CustomError(format!("fail reading line `{}` of `{}`: `{}`", i, path.to_str().unwrap(), err)))?;
 
-        if line.len() < 1 {
+        if line.trim_start().starts_with("#") {
             continue;
         }
 
-        if line.chars().nth(0) == Some('#') {
+        if line.trim().len() < 1 {
             continue;
         }
 

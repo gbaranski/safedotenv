@@ -35,15 +35,16 @@ fn main() -> Result<(), CustomError> {
 
     options.targets
         .iter()
-        .for_each(|target|
-             ignore::WalkBuilder::new(target)
-             .build_parallel()
+        .for_each(|target| {
+            let walk_builder = ignore::WalkBuilder::new(target);
+            walk_builder.build_parallel()
              .run(|| Box::new(|path| {
                  let dir_entry: ignore::DirEntry = path.unwrap().into();
                  scan::scan_file(dir_entry.into_path(), env_vars.clone());
 
                  ignore::WalkState::Continue
              }))
+        }
             );
 
     log::info!("Scanned files in {:?}", start.elapsed());
