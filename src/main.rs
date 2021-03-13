@@ -13,7 +13,7 @@ fn main() -> Result<(), CustomError> {
     let options: cli::Options = cli::Options::from_args();
 
     options
-        .init_logging()
+        .init_logger()
         .map_err(|err| CustomError(
                 format!(
                     "fail initializing logging: `{}`", err)
