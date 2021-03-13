@@ -6,6 +6,12 @@ Scanning [llvm](https://github.com/llvm/llvm-project) source code(8 million line
 
 ![scanning-llvm](docs/scanning-llvm.png)
 
+- [Installation](#installation)
+  * [Arch Linux](#arch-linux)
+  * [Manual](#manual)
+- [User Guide](#user-guide)
+  * [Using with git hooks](#using-with-git-hooks)
+
 ## Installation
 
 ### Arch Linux
@@ -20,6 +26,15 @@ paru -S safedotenv-git
 ##### Using [yay](https://github.com/Jguer/yay)
 ```
 yay -S safedotenv-git
+```
+
+### Manual
+
+```zsh
+git clone git@github.com:gbaranski/safedotenv.git
+cd safedotenv
+cargo build --release
+./target/release/safedotenv
 ```
 
 ## User Guide
