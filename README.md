@@ -18,14 +18,6 @@ Scanning [llvm](https://github.com/llvm/llvm-project) source code(8 million line
 
 Install `safedotenv-git` from [AUR](https://aur.archlinux.org/packages/safedotenv-git/)
 
-<h5>Using [paru](https://github.com/Morganamilo/paru)</h5>
-
-```
-paru -S safedotenv-git
-```
-
-<h5>Using [yay](https://github.com/Jguer/yay)</h5>
-
 ```
 yay -S safedotenv-git
 ```
