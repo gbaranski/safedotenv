@@ -26,7 +26,6 @@ Basic usage, scanning current directory recursively, assuming .env is present at
 safedotenv
 ```
 
-
 Scanning current directory but with .env file somewhere else
 
 ```
@@ -40,8 +39,19 @@ safedotenv --env-file somedir/.env ~/some/safe/dir
 ```
 
 
-Scanning specific directory but with .env file somewhere else, ignoring few variables in .env
+Scanning specific directory but with .env file somewhere else, ignoring `REFRESH_TOKEN` and `ACCESS_TOKEN` variables from .env
 
 ```
-safedotenv --env-file somedir/.env --ignored-envs REFRESH_TOKEN ACCESS_TOKEN ~/some/safe/dir
+safedotenv --env-file somedir/.env --ignore-env REFRESH_TOKEN ACCESS_TOKEN ~/some/safe/dir
 ```
+
+#### Using with git hooks
+
+1. Open `.git/hooks/pre-commit` file(create if does not exits)
+2. Add this code
+```
+#!/bin/sh
+
+safedotenv --silent $(git rev-parse --show-toplevel)
+```
+3. Done
