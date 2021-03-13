@@ -8,6 +8,8 @@ use colored::Colorize;
 use aho_corasick::AhoCorasick;
 use crate::utils::{Censorable, Line};
 use crate::dotenv::EnvVar;
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use yansi::Paint;
 
 pub struct FoundEnvVar {
     pub env: EnvVar,
@@ -15,22 +17,55 @@ pub struct FoundEnvVar {
     pub line: Line,
 }
 
+impl FoundEnvVar {
+    pub fn print(&self) -> std::io::Result<()> {
+        let space = std::iter::repeat(' ')
+            .take(self.line.row
+                  .to_string()
+                  .len())
+            .collect::<String>();
 
-impl std::fmt::Display for FoundEnvVar {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let censored = self.line.content.censor(
-            self.line.column,
-            self.line.column + self.env.value.len()
-            );
+        /*
+           Logging inspired by rust compiler
 
-        writeln!(f, "{}:{}:{}: {} {}", 
-                 self.path.to_str().unwrap().bold(), 
-                 (self.line.row + 1).to_string().bold(), 
-                 (self.line.column + 1).to_string().bold(), 
-                 "found".red().bold(),
-                 self.env.key.bright_red().bold(),
-                 )?;
-        write!(f, "{} | {}", self.line.row + 1, censored)?;
+           Leak of {key}
+           --> {directory}:{row}:{column}
+           |
+           {row} | {content}
+           |
+           */
+
+        let before_content = self.line.content.chars().take(self.line.column).collect::<String>();
+        let censored_content = std::iter::repeat('*').take(self.env.value.len()).collect::<String>();
+        let after_content = self.line.content.chars().skip(self.line.column + self.env.value.len()).collect::<String>();
+
+        println!("{}\n{}\n{}\n{}\n{}", 
+            format_args!("{} {}", 
+                "leak of", 
+                Paint::red(self.env.key.clone()).bold(), 
+                ),
+            format_args!("{} {}:{}:{}", 
+                Paint::blue("-->"),
+                self.path.display(),
+                self.line.row + 1,
+                self.line.column,
+                ),
+            format_args!("{} {}",
+                space,
+                Paint::blue("|")
+                ),
+            format_args!("{} {} {}{}{}",
+                Paint::blue(self.line.row),
+                Paint::blue("|"),
+                before_content,
+                Paint::red(censored_content),
+                after_content,
+                ),
+            format_args!("{} {}",
+                space,
+                Paint::blue("|")
+                )
+        );
 
         Ok(())
     }
@@ -60,6 +95,7 @@ pub fn scan_file<'a>(
 
     let ac = AhoCorasick::new(values);
 
+
     for mat in ac.find_iter(&contents) {
         let env_tuple = envs
             .iter()
@@ -75,8 +111,7 @@ pub fn scan_file<'a>(
             line,
             path: path.clone(),
         };
-
-        println!("{}", found_env);
+        found_env.print().unwrap();
     }
 }
 

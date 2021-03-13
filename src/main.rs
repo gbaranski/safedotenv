@@ -10,6 +10,7 @@ pub mod dotenv;
 pub mod cli;
 
 fn main() -> Result<(), CustomError> {
+    println!("");
     let options: cli::Options = cli::Options::from_args();
 
     let dotenv_path = dotenv::get_dotenv_path(&options)?;
