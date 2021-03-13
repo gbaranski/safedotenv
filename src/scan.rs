@@ -76,7 +76,7 @@ pub fn scan_file<'a>(
             path: path.clone(),
         };
 
-        println!("{}", found_env);
+        log::warn!("{}", found_env);
     }
 }
 
