@@ -12,9 +12,9 @@ pub struct Options {
     #[structopt(short="d", long="--debug")]
     pub debug: bool,
 
-    /// Enable silent mode(less logs, only information about leaks)
-    #[structopt(short="s", long="--silent")]
-    pub silent: bool,
+    /// Enable quiet mode(less logs, only information about leaks)
+    #[structopt(short="q", long="--quiet")]
+    pub quiet: bool,
 
     /// Set dotenv file to read from
     #[structopt(short = "f", long="--env-file")]
@@ -25,21 +25,3 @@ pub struct Options {
     pub ignored_envs: Vec<String>,
 }
 
-impl Options {
-    pub fn init_logger(&self) -> Result<(), log::SetLoggerError> {
-        if self.debug && self.silent {
-            panic!("using debug and silent flag at once is ambigous");
-        } 
-        let level = match self.debug {
-            true => log::LevelFilter::Debug,
-            false => match self.silent {
-                true => log::LevelFilter::Warn,
-                false => log::LevelFilter::Info,
-            },
-        };
-
-        let mut config_builder = simplelog::ConfigBuilder::new();
-
-        simplelog::SimpleLogger::init(level, config_builder.build())
-    }
-}

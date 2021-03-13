@@ -72,14 +72,7 @@ pub fn get_dotenv_path(options: &cli::Options) -> Result<PathBuf, CustomError> {
         Some(path) => Ok(path),
         None => {
             match find_env_file_in_targets(&options.targets) {
-                Some(path) => {
-                    log::info!(
-                        "Found .env file at {}, optionally you can specify it using --env-file", 
-                        path.parent().unwrap().to_str().unwrap()
-                        );
-
-                    Ok(path)
-                },
+                Some(path) => Ok(path),
                 None => Err(
                     CustomError("unable to find any .env file in targets, specify one using --env-file flag".to_string())
                     )
