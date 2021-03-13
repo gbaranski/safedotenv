@@ -38,3 +38,29 @@ impl Censorable for String {
             .collect()
     }
 }
+
+pub struct Line {
+    pub row: usize,
+    pub column: usize,
+    pub content: String,
+}
+
+pub fn find_line(content: &String, start: usize, end: usize) -> Line {
+    let mut column = 0;
+    let mut row = 0;
+    for c in content.chars().take(end) {
+        if c == '\n' {
+            row += 1;
+            column = 0;
+            continue;
+        }
+        column += 1;
+    }
+    let content = content.lines().nth(row).unwrap();
+
+    Line{
+        row,
+        column: column - (end - start),
+        content: content.to_string(),
+    }
+}

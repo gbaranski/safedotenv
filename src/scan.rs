@@ -5,103 +5,79 @@ use std::collections::HashMap;
 use std::io::prelude::*;
 use std::fmt;
 use colored::Colorize;
-use crate::utils::Censorable;
+use aho_corasick::AhoCorasick;
+use crate::CustomError;
+use crate::utils::{Censorable, Line};
 use crate::dotenv::EnvVar;
 
 pub struct FoundEnvVar {
     pub env: EnvVar,
-    pub line_n: usize,
-    pub char_n: usize,
-
     pub path: PathBuf,
-    pub line: String,
+    pub line: Line,
 }
 
 
 impl std::fmt::Display for FoundEnvVar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let censored = self.line.censor(
-            self.char_n,
-            self.char_n + self.env.value.len()
+        let censored = self.line.content.censor(
+            self.line.column,
+            self.line.column + self.env.value.len()
             );
 
         writeln!(f, "{}:{}:{}: {} {}", 
                  self.path.to_str().unwrap().bold(), 
-                 (self.line_n + 1).to_string().bold(), 
-                 (self.char_n + 1).to_string().bold(), 
+                 (self.line.row + 1).to_string().bold(), 
+                 (self.line.column + 1).to_string().bold(), 
                  "found".red().bold(),
                  self.env.key.bright_red().bold(),
                  )?;
-        write!(f, "{} | {}", self.line_n + 1, censored)?;
+        write!(f, "{} | {}", self.line.row + 1, censored)?;
 
         Ok(())
     }
 }
 
-fn scan_line(line: String, value: &String) -> Option<usize> {
-    if line.len() < value.len() {
-        return None
-    };
-    let mut i: usize = 0;
-    let mut j: usize = 0;
-
-    while i < line.len() && j < value.len() {
-        if line.chars().nth(i) == value.chars().nth(j) {
-            i += 1;
-            j += 1;
-            if j == value.len() {
-                return Some(i - value.len());
-            }
-        } else {
-            i = i - j + 1;
-            j = 0;
-        }
-    }
-    return None
-}
-
-
 pub fn scan_file<'a>(
     path: PathBuf, 
     envs: HashMap<String, String>, 
-    ) -> Result<Vec<FoundEnvVar>, crate::CustomError> {
+    ) {
 
-    log::debug!("scanning file {}", path.to_str().unwrap());
-    let mut found_envs: Vec<FoundEnvVar> = vec![];
-    
-    let file = File::open(&path)
-        .map_err(|err| crate::CustomError(format!("fail opening file `{}`:`{}`", path.to_str().unwrap(), err)))?;
-
-    let buf_reader = BufReader::new(file);
-
-    for (line_n, line) in buf_reader.lines().enumerate() {
-        let line = line
-            .map_err(|err| crate::CustomError(
-                    format!(
-                        "fail reading line `{}` of `{}`: {}", line_n + 1, path.to_str().unwrap(), err)
-                    )
-                )?;
-
-        for env in &envs {
-            let (key, value) = env;
-            if line.contains(value) {
-                let found_env = FoundEnvVar {
-                    line: line.clone(),
-                    line_n,
-                    char_n: 10,
-                    env: EnvVar{
-                        key: key.clone(),
-                        value: value.clone(),
-                    },
-                    path: path.clone(),
-                };
-                found_envs.push(found_env);
-
-
-            }
-        }
+    if path.is_dir() {
+        return;
     }
 
-    Ok(found_envs)
+    let file = File::open(&path).unwrap();
+
+    let values = envs
+        .iter()
+        .map(|e| e.1);
+
+    let mut buf_reader = BufReader::new(file);
+    let mut contents = String::new();
+    match buf_reader.read_to_string(&mut contents) {
+        Ok(_size) => (),
+        Err(_err) => return
+    };
+
+    let ac = AhoCorasick::new(values);
+    
+    for mat in ac.find_iter(&contents) {
+        let env_tuple = envs
+            .iter()
+            .nth(mat.pattern())
+            .unwrap();
+
+        let line = crate::utils::find_line(&contents,mat.start(), mat.end());
+        let found_env = FoundEnvVar {
+            env: EnvVar {
+                key: env_tuple.0.clone(),
+                value: env_tuple.1.clone(),
+            },
+            line,
+            path: path.clone(),
+        };
+
+        println!("{}", found_env);
+    }
 }
 
