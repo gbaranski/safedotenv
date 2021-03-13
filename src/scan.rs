@@ -6,7 +6,6 @@ use std::io::prelude::*;
 use std::fmt;
 use colored::Colorize;
 use aho_corasick::AhoCorasick;
-use crate::CustomError;
 use crate::utils::{Censorable, Line};
 use crate::dotenv::EnvVar;
 
@@ -60,14 +59,14 @@ pub fn scan_file<'a>(
     };
 
     let ac = AhoCorasick::new(values);
-    
+
     for mat in ac.find_iter(&contents) {
         let env_tuple = envs
             .iter()
             .nth(mat.pattern())
             .unwrap();
 
-        let line = crate::utils::find_line(&contents,mat.start(), mat.end());
+        let line = crate::utils::find_line(&contents, mat.start(), mat.end());
         let found_env = FoundEnvVar {
             env: EnvVar {
                 key: env_tuple.0.clone(),

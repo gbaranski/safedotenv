@@ -22,7 +22,7 @@ fn main() -> Result<(), CustomError> {
     let dotenv_path = dotenv::get_dotenv_path(&options)?;
     log::debug!("will use dotenv file at `{}`", dotenv_path.to_str().unwrap());
 
-    let env_vars = dotenv::parse(&dotenv_path)?;
+    let env_vars = dotenv::parse(&dotenv_path, &options.ignored_envs)?;
     if log::max_level() >= log::LevelFilter::Debug {
         for (i, env) in env_vars.iter().enumerate() {
             let (key, value) = env;

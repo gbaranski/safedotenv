@@ -12,13 +12,13 @@ pub struct EnvVar {
 }
 pub type EnvVarsMap = HashMap<String, String>;
 
-pub fn parse(path: &PathBuf) -> Result<HashMap<String, String>, CustomError> {
+pub fn parse(path: &PathBuf, ignored_envs: &Vec<String>) -> Result<HashMap<String, String>, CustomError> {
     let mut env_vars : EnvVarsMap = HashMap::new();
 
     let lines = read_lines(path)
         .map_err(|err| CustomError(format!("fail reading lines of `{}`:`{}`", path.to_str().unwrap(), err)))?;
 
-    for ( i, line ) in lines.enumerate() {
+    'lines: for ( i, line ) in lines.enumerate() {
         let line = line
             .map_err(|err| crate::CustomError(format!("fail reading line `{}` of `{}`: `{}`", i, path.to_str().unwrap(), err)))?;
 
@@ -42,6 +42,11 @@ pub fn parse(path: &PathBuf) -> Result<HashMap<String, String>, CustomError> {
             _ => Err(CustomError(format!("failed reading line `{}` of `{}`", i, path.to_str().unwrap()))),
         }?;
 
+        for ignored_env in ignored_envs {
+            if ignored_env == key {
+                continue 'lines;
+            }
+        }
         env_vars.insert(String::from(key), String::from(value));
     }
 
