@@ -2,6 +2,10 @@
 
 Safedotenv is tool to make sure that your .env secrets are safe and not commited by accident after testing something.
 
+Scanning [llvm](https://github.com/llvm/llvm-project) source code(8 million lines of code) slightly above 1 second on Intel i7-10510U and NVMe.
+
+![scanning-llvm](docs/scanning-llvm.png)
+
 ## Installation
 
 ### Arch Linux
