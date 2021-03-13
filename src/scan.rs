@@ -3,12 +3,9 @@ use std::fs::File;
 use std::io::BufReader;
 use std::collections::HashMap;
 use std::io::prelude::*;
-use std::fmt;
-use colored::Colorize;
 use aho_corasick::AhoCorasick;
-use crate::utils::{Censorable, Line};
+use crate::utils::Line;
 use crate::dotenv::EnvVar;
-use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use yansi::Paint;
 
 pub struct FoundEnvVar {
@@ -20,7 +17,7 @@ pub struct FoundEnvVar {
 impl FoundEnvVar {
     pub fn print(&self) -> std::io::Result<()> {
         let space = std::iter::repeat(' ')
-            .take(self.line.row
+            .take((self.line.row + 1)
                   .to_string()
                   .len())
             .collect::<String>();
@@ -33,7 +30,7 @@ impl FoundEnvVar {
            |
            {row} | {content}
            |
-           */
+        */
 
         let before_content = self.line.content.chars().take(self.line.column).collect::<String>();
         let censored_content = std::iter::repeat('*').take(self.env.value.len()).collect::<String>();
@@ -55,7 +52,7 @@ impl FoundEnvVar {
                 Paint::blue("|")
                 ),
             format_args!("{} {} {}{}{}",
-                Paint::blue(self.line.row),
+                Paint::blue(self.line.row + 1),
                 Paint::blue("|"),
                 before_content,
                 Paint::red(censored_content),
