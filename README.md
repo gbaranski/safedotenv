@@ -49,9 +49,12 @@ safedotenv --env-file somedir/.env --ignore-env REFRESH_TOKEN ACCESS_TOKEN ~/som
 
 1. Open `.git/hooks/pre-commit` file(create if does not exits)
 2. Add this code
-```
+```bash
 #!/bin/sh
 
 safedotenv --silent $(git rev-parse --show-toplevel)
 ```
-3. Done
+3. Add permissions to execute file
+```bash
+chmod +x .git/hooks/pre-commit
+```
