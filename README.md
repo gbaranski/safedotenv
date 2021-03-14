@@ -1,6 +1,6 @@
 # Safedotenv
 
-Safedotenv is tool to make sure that your .env secrets are safe and not commited by accident after testing something.
+Safedotenv is tool to check if your code leaks any .env variables that are left in code for testing purposes.
 
 Scanning [llvm](https://github.com/llvm/llvm-project) source code(8 million lines of code) takes around 1 second on Intel i7-10510U and NVMe. However there is still room for improvement.
 
